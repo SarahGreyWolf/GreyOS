@@ -1,5 +1,5 @@
 [package]
-name = "GreyOS"
+name = "grey_os"
 version = "0.1.0"
 authors = ["SarahGreyWolf <m.sarahgreywolf@outlook.com>"]
 edition = "2018"
