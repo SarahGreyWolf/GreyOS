@@ -9,6 +9,7 @@ mod vga;
 mod prelude;
 mod instructions;
 mod qemu;
+mod serial;
 
 #[cfg(test)]
 mod tests;
