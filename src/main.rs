@@ -51,10 +51,12 @@ fn panic(info: &PanicInfo) -> ! {
 }
 
 #[cfg(test)]
-fn test_runner(tests: &[&dyn Fn()]) {
+fn test_runner(tests: &[&dyn tests::Testable]) {
     serial_println!("Running {} tests", tests.len());
     for test in tests {
-        test();
+        // Execute the run method from the Testable trait
+        // Allows for print the status without every test needing to do so
+        test.run();
     }
     qemu::exit_qemu(qemu::QemuExitCode::Success);
 }
