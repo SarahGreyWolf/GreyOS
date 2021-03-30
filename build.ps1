@@ -25,5 +25,6 @@ foreach ($file in $in_files) {
     nasm -f elf64 "asm/$name_with_ext" -o "target/elf/$name_without_ext.o";
     $objects.Add("target/elf/$name_without_ext.o");
 }
-$complete = ($objects -join ' ');
-"ld -n -o target/kernel.bin -T linker.ld $complete";
+echo "Creating Kernel.bin from linker...";
+ld -n -o target/kernel.bin -T linker.ld $objects;
+echo "Complete"

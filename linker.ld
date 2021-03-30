@@ -7,15 +7,13 @@ SECTIONS {
     */
     . = 1M;
     /* First section of the executable */
-    .boot :
-    {
+    .boot : {
         /* Ensure that the multiboot header is at the beginning */
         *(.multiboot_header)
     }
     
     /* Second section of the executable */
-    .text :
-    {
+    .text : {
         /* Loads the .text section from boot.asm */
         *(.text)
     }
