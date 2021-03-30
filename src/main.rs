@@ -8,6 +8,7 @@
 mod vga;
 mod prelude;
 mod instructions;
+mod qemu;
 
 #[cfg(test)]
 mod tests;
@@ -41,4 +42,5 @@ fn test_runner(tests: &[&dyn Fn()]) {
     for test in tests {
         test();
     }
+    qemu::exit_qemu(qemu::QemuExitCode::Success);
 }

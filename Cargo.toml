@@ -22,3 +22,5 @@ features = ["spin_no_std"]
 run-command = ["qemu-system-x86_64", "-drive", "format=raw,file={}",  "-L", "C:/Program Files/qemu"]
 # iobase and iosize is the device port for qemu
 test-args = ["-device", "isa-debug-exit,iobase=0xf4,iosize=0x04"]
+# The success exit code from QEMU on test success
+test-success-exit-code = 33 # (0x10 << 1) | 1
