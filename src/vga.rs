@@ -55,17 +55,27 @@ impl Writer {
         }
     }
 
-    pub fn write_byte(&mut self, character_byte: u8, background: Colour, foreground: Colour) {
+    pub fn write_byte(&mut self, character_byte: &u8, background: Colour, foreground: Colour) {
         if self.cursor >= WIDTH * HEIGHT {
             return;
         } else {
             self.buffer.chars[self.cursor / WIDTH][self.cursor].write(ScreenChar {
-                ascii_character: character_byte,
+                ascii_character: *character_byte,
                 colour_code: foreground as u8 | (background as u8) << 4,
             });
             self.foreground[self.cursor] = foreground;
             self.background[self.cursor] = background;
             self.cursor+=1;
+        }
+    }
+
+    pub fn write_string(&mut self, s: &str, background: Colour, foreground: Colour) {
+        for byte in s.as_bytes() {
+            match byte {
+                // Only attempt to print ascii bytes or newline
+                0x20..=0x7e | b'\n' => self.write_byte(byte, background, foreground),
+                _ => self.write_byte(&0xfe, background, foreground),
+            }
         }
     }
 }

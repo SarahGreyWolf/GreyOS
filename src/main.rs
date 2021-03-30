@@ -7,17 +7,12 @@ mod vga;
 use core::panic::PanicInfo;
 use vga::{Writer, Colour};
 
-// Bytes of ascii Hello World to write to VGA Text Buffer
-static HELLO: &[u8] = b"Hello World ";
-
 #[no_mangle]
 pub extern "C" fn _start() -> ! {
     let mut vga_buffer = vga::Writer::init();
 
-    for &byte in HELLO.iter() {
-        vga_buffer.write_byte(byte, Colour::Grey,
-                              Colour::LightMagenta);
-    }
+    vga_buffer.write_string("This is a test", Colour::Grey,
+                            Colour::LightMagenta);
     loop {}
 }
 
