@@ -1,4 +1,6 @@
 use volatile::Volatile;
+use core::fmt;
+use core::fmt::{Arguments, write};
 
 const WIDTH: usize = 80;
 const HEIGHT: usize = 25;
@@ -38,7 +40,7 @@ struct Buffer {
 }
 
 pub struct Writer {
-    cursor: usize,
+    pub cursor: usize,
     buffer: &'static mut Buffer,
     foreground: [Colour; WIDTH*HEIGHT],
     background: [Colour; WIDTH*HEIGHT],
@@ -59,14 +61,29 @@ impl Writer {
         if self.cursor >= WIDTH * HEIGHT {
             return;
         } else {
-            self.buffer.chars[self.cursor / WIDTH][self.cursor].write(ScreenChar {
-                ascii_character: *character_byte,
-                colour_code: foreground as u8 | (background as u8) << 4,
-            });
-            self.foreground[self.cursor] = foreground;
-            self.background[self.cursor] = background;
-            self.cursor+=1;
+            let row = self.cursor / WIDTH;
+            let col = (self.cursor - (row * WIDTH));
+            match character_byte {
+                b'\n' => {
+                    self.new_line();
+                }
+                _ => {
+                    self.buffer.chars[row][col].write(ScreenChar {
+                        ascii_character: *character_byte,
+                        colour_code: foreground as u8 | (background as u8) << 4,
+                    });
+                    self.foreground[self.cursor] = foreground;
+                    self.background[self.cursor] = background;
+                    self.cursor+=1;
+                }
+            }
         }
+    }
+
+    pub fn new_line(&mut self) {
+        let row = self.cursor / WIDTH;
+        let col = (self.cursor - (row * WIDTH));
+        self.cursor = self.cursor - col + WIDTH;
     }
 
     pub fn write_string(&mut self, s: &str, background: Colour, foreground: Colour) {
@@ -77,5 +94,13 @@ impl Writer {
                 _ => self.write_byte(&0xfe, background, foreground),
             }
         }
+    }
+
+}
+
+impl fmt::Write for Writer {
+    fn write_str(&mut self, s: &str) -> fmt::Result {
+        self.write_string(s, Colour::Black, Colour::White);
+        Ok(())
     }
 }
