@@ -8,6 +8,5 @@ build-std-features = ["compiler-builtins-mem"]
 # Always build for our target
 target = "x86_64-grey_os.json"
 
-# Useless since on windows QEMU requires passing [-L "C:\Program Files\qemu"] as an argument
-# [target.'cfg(target_os = "none")']
-# runner = "bootimage runner"
+[target.'cfg(target_os = "none")']
+runner = "bootimage runner"

@@ -66,13 +66,11 @@ impl Writer {
     }
 
     pub fn write_byte(&mut self, character_byte: &u8, background: Colour, foreground: Colour) {
-        let mut row = self.cursor / WIDTH;
-        let mut col = (self.cursor - (row * WIDTH));
         if self.cursor >= WIDTH * HEIGHT {
             self.shift_line_up();
         }
-        row = self.cursor / WIDTH;
-        col = (self.cursor - (row * WIDTH));
+        let mut row = self.cursor / WIDTH;
+        let col = (self.cursor - (row * WIDTH));
         match character_byte {
             b'\n' => {
                 self.new_line();
