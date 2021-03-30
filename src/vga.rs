@@ -1,6 +1,6 @@
 use volatile::Volatile;
 use core::fmt;
-use core::fmt::{Arguments, write};
+use core::fmt::{Arguments, write, Write};
 
 const WIDTH: usize = 80;
 const HEIGHT: usize = 25;
@@ -58,25 +58,49 @@ impl Writer {
     }
 
     pub fn write_byte(&mut self, character_byte: &u8, background: Colour, foreground: Colour) {
+        let mut row = self.cursor / WIDTH;
+        let mut col = (self.cursor - (row * WIDTH));
         if self.cursor >= WIDTH * HEIGHT {
-            return;
-        } else {
-            let row = self.cursor / WIDTH;
-            let col = (self.cursor - (row * WIDTH));
-            match character_byte {
-                b'\n' => {
+            self.shift_line_up();
+        }
+        row = self.cursor / WIDTH;
+        col = (self.cursor - (row * WIDTH));
+        match character_byte {
+            b'\n' => {
+                self.new_line();
+            }
+            _ => {
+                if col >= WIDTH {
                     self.new_line();
                 }
-                _ => {
-                    self.buffer.chars[row][col].write(ScreenChar {
-                        ascii_character: *character_byte,
-                        colour_code: foreground as u8 | (background as u8) << 4,
-                    });
-                    self.foreground[self.cursor] = foreground;
-                    self.background[self.cursor] = background;
-                    self.cursor+=1;
-                }
+                self.buffer.chars[row][col].write(ScreenChar {
+                    ascii_character: *character_byte,
+                    colour_code: foreground as u8 | (background as u8) << 4,
+                });
+                self.foreground[self.cursor] = foreground;
+                self.background[self.cursor] = background;
+                self.cursor+=1;
             }
+        }
+    }
+
+    pub fn shift_line_up(&mut self) {
+        self.clear_line(0);
+        for row in 1..HEIGHT {
+            for col in 0..WIDTH {
+                let char = self.buffer.chars[row][col].read();
+                self.buffer.chars[row - 1][col].write(char);
+            }
+        }
+        let mut row = self.cursor / WIDTH;
+        let mut col = (self.cursor - (row * WIDTH));
+        self.cursor -= col;
+    }
+
+    pub fn clear_line(&mut self, row: usize) {
+        let blank = ScreenChar{ ascii_character: 0, colour_code: 0 };
+        for col in 0..WIDTH {
+            self.buffer.chars[row][col].write(blank);
         }
     }
 
