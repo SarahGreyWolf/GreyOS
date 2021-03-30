@@ -1,8 +1,11 @@
+use volatile::Volatile;
 
 const WIDTH: usize = 80;
 const HEIGHT: usize = 25;
 
-#[derive(Copy, Clone)]
+#[allow(dead_code)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[repr(u8)]
 pub enum Colour {
     Black=0x0,
     Blue=0x1,
@@ -22,40 +25,47 @@ pub enum Colour {
     White=0xF
 }
 
-pub struct VGATextBuffer {
-    cursor: usize,
-    foreground: [Colour; WIDTH*HEIGHT],
-    background: [Colour; WIDTH*HEIGHT],
-    contents: [u8; WIDTH*HEIGHT],
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[repr(C)]
+struct ScreenChar {
+    ascii_character: u8,
+    colour_code: u8,
 }
 
-impl VGATextBuffer {
+#[repr(transparent)]
+struct Buffer {
+    chars: [[Volatile<ScreenChar>; WIDTH]; HEIGHT]
+}
+
+pub struct Writer {
+    cursor: usize,
+    buffer: &'static mut Buffer,
+    foreground: [Colour; WIDTH*HEIGHT],
+    background: [Colour; WIDTH*HEIGHT],
+}
+
+impl Writer {
     pub fn init() -> Self {
         Self {
             cursor: 0,
+            // Get a mutable reference to a pointer that is a mutable pointer ????? Madness
+            buffer: unsafe { &mut *(0xb8000 as *mut Buffer) },
             foreground: [Colour::Black; WIDTH*HEIGHT],
             background: [Colour::Black; WIDTH*HEIGHT],
-            contents: [0u8; WIDTH*HEIGHT],
         }
     }
 
-    pub fn write_char(&mut self, character_byte: u8, background: Colour, foreground: Colour) {
-        // Create a pointer to the memory address of the VGA Buffer
-        let pointer = 0xb8000 as *mut u8;
-        if self.cursor == WIDTH * HEIGHT {
+    pub fn write_byte(&mut self, character_byte: u8, background: Colour, foreground: Colour) {
+        if self.cursor >= WIDTH * HEIGHT {
             return;
         } else {
-            unsafe {
-                // Write to the memory address of the buffer with an offset
-                // EG. Write the ascii value of e to 0xb8000 + 1
-                *pointer.offset(self.cursor as isize) = character_byte;
-                // Make the background colour a light cyan
-                *pointer.offset(self.cursor as isize + 1) = foreground as u8 | (background as u8) << 4;
-                self.contents[self.cursor] = character_byte;
-                self.foreground[self.cursor] = foreground;
-                self.background[self.cursor] = background;
-                self.cursor+=2;
-            }
+            self.buffer.chars[self.cursor / WIDTH][self.cursor].write(ScreenChar {
+                ascii_character: character_byte,
+                colour_code: foreground as u8 | (background as u8) << 4,
+            });
+            self.foreground[self.cursor] = foreground;
+            self.background[self.cursor] = background;
+            self.cursor+=1;
         }
     }
 }
