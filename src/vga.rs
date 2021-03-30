@@ -1,9 +1,17 @@
 use volatile::Volatile;
+use lazy_static::lazy_static;
+use spin::Mutex;
 use core::fmt;
 use core::fmt::{Arguments, write, Write};
 
 const WIDTH: usize = 80;
 const HEIGHT: usize = 25;
+
+lazy_static! {
+    // Lazy Mutex, instead of blocking,
+    // threads will repeatedly attempt to lock it till it's possible
+    pub static ref VGA_WRITER: Mutex<Writer> = Mutex::new(Writer::init());
+}
 
 #[allow(dead_code)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
