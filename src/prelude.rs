@@ -1,0 +1,1 @@
+pub use crate::vga::{VGA_WRITER};
