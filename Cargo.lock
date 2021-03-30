@@ -4,9 +4,9 @@ version = 3
 
 [[package]]
 name = "bootloader"
-version = "0.10.0-alpha-03"
+version = "0.9.16"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "47c46ddc26f319da11c86be1c748720a1017968973212c86c46be04050870945"
+checksum = "8cb1dc91ba8f16c89133c569bc2516833a632a654d61d228b16ae8d2bad5ed8a"
 
 [[package]]
 name = "grey_os"
