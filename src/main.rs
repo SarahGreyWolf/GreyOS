@@ -18,7 +18,8 @@ pub extern "C" fn _start() -> ! {
 
 // Called on Panic
 #[panic_handler]
-fn panic(_info: &PanicInfo) -> ! {
+fn panic(info: &PanicInfo) -> ! {
+    println!("{}", info);
     // If it panics, loop forever
     // Like executing a nop forever?
     loop{}
