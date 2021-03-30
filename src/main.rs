@@ -21,6 +21,7 @@ use prelude::*;
 #[no_mangle]
 pub extern "C" fn _start() -> ! {
     println!("Test");
+    println!("Hello?");
 
     #[cfg(test)]
     test_main();
@@ -29,6 +30,7 @@ pub extern "C" fn _start() -> ! {
 
 
 // Called on Panic
+#[cfg(not(test))]
 #[panic_handler]
 fn panic(info: &PanicInfo) -> ! {
     println!("{}", info);
@@ -36,10 +38,21 @@ fn panic(info: &PanicInfo) -> ! {
     // Like executing a nop forever?
     loop{}
 }
+// Called on Panic
+#[cfg(test)]
+#[panic_handler]
+fn panic(info: &PanicInfo) -> ! {
+    serial_println!("[Failed]\n");
+    serial_println!("Error: {}\n", info);
+    qemu::exit_qemu(qemu::QemuExitCode::Failed);
+    // If it panics, loop forever
+    // Like executing a nop forever?
+    loop{}
+}
 
 #[cfg(test)]
 fn test_runner(tests: &[&dyn Fn()]) {
-    println!("Running {} tests", tests.len());
+    serial_println!("Running {} tests", tests.len());
     for test in tests {
         test();
     }
