@@ -2,34 +2,21 @@
 #![no_std]
 #![no_main]
 
+mod vga;
+
 use core::panic::PanicInfo;
+use vga::{VGATextBuffer, Colour};
 
 // Bytes of ascii Hello World to write to VGA Text Buffer
-static HELLO: &[u8] = b"Hello World";
+static HELLO: &[u8] = b"Hello World ";
 
 #[no_mangle]
 pub extern "C" fn _start() -> ! {
+    let mut vga_buffer = vga::VGATextBuffer::init();
 
-    // Create a pointer to the memory address of the VGA Buffer
-    let vga_buffer = 0xb8000 as *mut u8;
-
-    for (i, &byte) in HELLO.iter().enumerate() {
-        unsafe {
-            // Write to the memory address of the buffer with an offset
-            // EG. Write the ascii value of e to 0xb8000 + 1
-            *vga_buffer.offset(i as isize * 2) = byte;
-            // Make the foreground/text colour a light cyan
-            *vga_buffer.offset(i as isize * 2 + 1) = 0x9 | 0x40;
-        }
-    }
-    for (i, &byte) in HELLO.iter().enumerate() {
-        unsafe {
-            // Write to the memory address of the buffer with an offset
-            // EG. Write the ascii value of e to 0xb8000 + 1
-            *vga_buffer.offset(i as isize * 2 + 160) = byte;
-            // Make the background colour a light cyan
-            *vga_buffer.offset(i as isize * 2 + 1 + 160) = 0xb;
-        }
+    for &byte in HELLO.iter() {
+        vga_buffer.write_char(byte, Colour::Grey,
+                              Colour::LightMagenta);
     }
 
     loop {}
