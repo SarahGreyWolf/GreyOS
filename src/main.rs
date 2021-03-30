@@ -21,7 +21,6 @@ use prelude::*;
 #[no_mangle]
 pub extern "C" fn _start() -> ! {
     println!("Test");
-    println!("Hello?");
 
     #[cfg(test)]
     test_main();
