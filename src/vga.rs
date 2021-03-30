@@ -3,6 +3,8 @@ use lazy_static::lazy_static;
 use spin::Mutex;
 use core::fmt;
 use core::fmt::{Arguments, write, Write};
+use crate::{print, println};
+use crate::instructions::port::{PortWriteOnly, Port};
 
 const WIDTH: usize = 80;
 const HEIGHT: usize = 25;
@@ -48,7 +50,7 @@ struct Buffer {
 }
 
 pub struct Writer {
-    pub cursor: usize,
+    pub cursor_pos: usize,
     buffer: &'static mut Buffer,
     foreground: [Colour; WIDTH*HEIGHT],
     background: [Colour; WIDTH*HEIGHT],
@@ -56,8 +58,16 @@ pub struct Writer {
 
 impl Writer {
     pub fn init() -> Self {
+        // FIXME: Actually make the cursor visible and update with writing
+        unsafe {
+            use crate::instructions::port::Port;
+            let mut port = Port::new(0x3D4);
+            port.write(0x0A as u8);
+            let mut port = Port::new(0x3D5);
+            port.write(0x20 as u8);
+        }
         Self {
-            cursor: 0,
+            cursor_pos: 0,
             // Get a mutable reference to a pointer that is a mutable pointer ????? Madness
             buffer: unsafe { &mut *(0xb8000 as *mut Buffer) },
             foreground: [Colour::Black; WIDTH*HEIGHT],
@@ -66,11 +76,11 @@ impl Writer {
     }
 
     pub fn write_byte(&mut self, character_byte: &u8, background: Colour, foreground: Colour) {
-        if self.cursor >= WIDTH * HEIGHT {
+        if self.cursor_pos >= WIDTH * HEIGHT {
             self.shift_line_up();
         }
-        let mut row = self.cursor / WIDTH;
-        let col = (self.cursor - (row * WIDTH));
+        let mut row = self.cursor_pos / WIDTH;
+        let col = (self.cursor_pos - (row * WIDTH));
         match character_byte {
             b'\n' => {
                 self.new_line();
@@ -83,9 +93,9 @@ impl Writer {
                     ascii_character: *character_byte,
                     colour_code: foreground as u8 | (background as u8) << 4,
                 });
-                self.foreground[self.cursor] = foreground;
-                self.background[self.cursor] = background;
-                self.cursor+=1;
+                self.foreground[self.cursor_pos] = foreground;
+                self.background[self.cursor_pos] = background;
+                self.cursor_pos +=1;
             }
         }
     }
@@ -98,9 +108,9 @@ impl Writer {
                 self.buffer.chars[row - 1][col].write(char);
             }
         }
-        let mut row = self.cursor / WIDTH;
-        let mut col = (self.cursor - (row * WIDTH));
-        self.cursor -= col;
+        let mut row = self.cursor_pos / WIDTH;
+        let mut col = (self.cursor_pos - (row * WIDTH));
+        self.cursor_pos -= col;
     }
 
     pub fn clear_line(&mut self, row: usize) {
@@ -111,9 +121,9 @@ impl Writer {
     }
 
     pub fn new_line(&mut self) {
-        let row = self.cursor / WIDTH;
-        let col = (self.cursor - (row * WIDTH));
-        self.cursor = self.cursor - col + WIDTH;
+        let row = self.cursor_pos / WIDTH;
+        let col = (self.cursor_pos - (row * WIDTH));
+        self.cursor_pos = self.cursor_pos - col + WIDTH;
     }
 
     pub fn write_string(&mut self, s: &str, background: Colour, foreground: Colour) {
