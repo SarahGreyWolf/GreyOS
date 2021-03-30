@@ -1,0 +1,9 @@
+[unstable]
+# Recompile the libraries for our target
+build-std = ["core", "compiler_builtins"]
+# Enable compiler_builtins memory functions
+build-std-features = ["compiler-builtins-mem"]
+
+[build]
+# Always build for our target
+target = "x86_64-grey_os.json"
