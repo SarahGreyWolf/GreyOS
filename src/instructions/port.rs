@@ -126,8 +126,8 @@ pub struct Port<T> {
 
 impl<T> Port<T> {
     #[inline]
-    pub const fn new(port: u16) -> PortWriteOnly<T> {
-        PortWriteOnly {
+    pub const fn new(port: u16) -> Port<T> {
+        Port {
             port,
             // Acts like it owns a T type
             phantom: PhantomData,
