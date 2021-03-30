@@ -3,11 +3,11 @@ use lazy_static::lazy_static;
 use spin::Mutex;
 use core::fmt;
 use core::fmt::{Arguments, write, Write};
-use crate::{print, println};
+use crate::{print, println, serial_println};
 use crate::instructions::port::{PortWriteOnly, Port};
 
-const WIDTH: usize = 80;
-const HEIGHT: usize = 25;
+pub const WIDTH: usize = 80;
+pub const HEIGHT: usize = 25;
 
 lazy_static! {
     // Lazy Mutex, instead of blocking,
@@ -39,19 +39,19 @@ pub enum Colour {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[repr(C)]
-struct ScreenChar {
-    ascii_character: u8,
+pub(crate) struct ScreenChar {
+    pub(crate) ascii_character: u8,
     colour_code: u8,
 }
 
 #[repr(transparent)]
-struct Buffer {
-    chars: [[Volatile<ScreenChar>; WIDTH]; HEIGHT]
+pub(crate) struct Buffer {
+    pub(crate) chars: [[Volatile<ScreenChar>; WIDTH]; HEIGHT]
 }
 
 pub struct Writer {
-    pub cursor_pos: usize,
-    buffer: &'static mut Buffer,
+    pub(crate) cursor_pos: usize,
+    pub(crate) buffer: &'static mut Buffer,
     foreground: [Colour; WIDTH*HEIGHT],
     background: [Colour; WIDTH*HEIGHT],
 }
@@ -76,11 +76,13 @@ impl Writer {
     }
 
     pub fn write_byte(&mut self, character_byte: &u8, background: Colour, foreground: Colour) {
-        if self.cursor_pos >= WIDTH * HEIGHT {
+        let mut row = self.cursor_pos / WIDTH;
+        if row >= HEIGHT {
             self.shift_line_up();
         }
-        let mut row = self.cursor_pos / WIDTH;
-        let col = (self.cursor_pos - (row * WIDTH));
+        row = self.cursor_pos / WIDTH;
+        // serial_println!("{:#}", row);
+        let col = self.cursor_pos % WIDTH;
         match character_byte {
             b'\n' => {
                 self.new_line();
@@ -108,9 +110,8 @@ impl Writer {
                 self.buffer.chars[row - 1][col].write(char);
             }
         }
-        let mut row = self.cursor_pos / WIDTH;
-        let mut col = (self.cursor_pos - (row * WIDTH));
-        self.cursor_pos -= col;
+        let mut col = self.cursor_pos % WIDTH;
+        self.cursor_pos -= WIDTH;
     }
 
     pub fn clear_line(&mut self, row: usize) {
@@ -122,7 +123,10 @@ impl Writer {
 
     pub fn new_line(&mut self) {
         let row = self.cursor_pos / WIDTH;
-        let col = (self.cursor_pos - (row * WIDTH));
+        let mut col = self.cursor_pos % WIDTH;
+        if row >= HEIGHT {
+            self.shift_line_up();
+        }
         self.cursor_pos = self.cursor_pos - col + WIDTH;
     }
 
